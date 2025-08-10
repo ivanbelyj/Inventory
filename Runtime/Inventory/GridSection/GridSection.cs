@@ -22,7 +22,7 @@ public class GridSection : NetworkBehaviour
 
     private ItemStaticDataManager _itemStaticDataManager;
 
-    public event SyncList<GridSectionItem>.SyncListChanged InventoryChanged {
+    public event Action<SyncList<GridSectionItem>.Operation, int, GridSectionItem, GridSectionItem> InventoryChanged {
         add {
             _syncItems.Callback += value;
         }
