@@ -9,13 +9,15 @@ using UnityEngine;
 /// </summary>
 public class ItemsUITooltipActivatorInitializer : MonoBehaviour
 {
-    public void Awake() {
+    public void Awake()
+    {
         Initialize();
     }
 
-    public void Initialize() {
+    public void Initialize()
+    {
         // ItemsUI может быть неактивен в момент поиска
-        var itemsUIController = FindObjectOfType<ItemsUIControllerBase>(true);
+        var itemsUIController = FindObjectOfType<ItemsUIControllerCore>(true);
         GetComponent<TooltipActivator>().Initialize(itemsUIController.ParentUI);
     }
 }

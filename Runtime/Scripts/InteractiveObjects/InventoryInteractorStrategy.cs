@@ -7,11 +7,11 @@ using UnityEngine;
 /// </summary>
 public class InventoryInteractorStrategy : MonoBehaviour, IInteractorStrategy
 {
-    private ItemsUIControllerBase _itemsUIController;
+    private ItemsUIControllerCore _itemsUIController;
 
     private void Awake()
     {
-        _itemsUIController = FindAnyObjectByType<ItemsUIControllerBase>();
+        _itemsUIController = FindAnyObjectByType<ItemsUIControllerCore>();
     }
 
     public bool CanInteract(Collider col)

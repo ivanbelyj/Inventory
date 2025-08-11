@@ -1,6 +1,6 @@
 using UnityEngine;
 
-public class ItemsUIControllerBase : MonoBehaviour
+public class ItemsUIControllerCore : MonoBehaviour
 {
     [System.Flags]
     public enum ItemsUI

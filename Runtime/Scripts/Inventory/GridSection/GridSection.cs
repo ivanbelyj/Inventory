@@ -12,7 +12,7 @@ public class GridSection : NetworkBehaviour
     private string _sectionName;
 
     private readonly SyncList<GridSectionItem> _syncItems = new SyncList<GridSectionItem>();
-    
+
     private Dictionary<uint, GridSectionItem> _items;
 
     /// <summary>
@@ -22,11 +22,14 @@ public class GridSection : NetworkBehaviour
 
     private ItemStaticDataManager _itemStaticDataManager;
 
-    public event Action<SyncList<GridSectionItem>.Operation, int, GridSectionItem, GridSectionItem> InventoryChanged {
-        add {
+    public event SyncList<GridSectionItem>.SyncListChanged InventoryChanged
+    {
+        add
+        {
             _syncItems.Callback += value;
         }
-        remove {
+        remove
+        {
             _syncItems.Callback -= value;
         }
     }
@@ -38,7 +41,8 @@ public class GridSection : NetworkBehaviour
     public int Width { get => _width; private set => _width = value; }
     public int Height { get => _height; private set => _height = value; }
 
-    private void Awake() {
+    private void Awake()
+    {
         _syncItems.Callback += SyncItems;
         _itemStaticDataManager = FindObjectOfType<ItemStaticDataManager>();
 
@@ -63,45 +67,52 @@ public class GridSection : NetworkBehaviour
             .GetStaticDataByName(((string)item.ItemData.ItemStaticDataName)).Mass * item.Count);
 
     #region Sync
-    
+
     [Server]
-    private void AddItem(GridSectionItem item) {
+    private void AddItem(GridSectionItem item)
+    {
         Debug.Log("AddItem. " + item);
         _syncItems.Add(item);
     }
 
     [Server]
-    private void RemoveItem(GridSectionItem item) {
+    private void RemoveItem(GridSectionItem item)
+    {
         // Debug.Log($"Remove grid section item on server: " + item);
-        if (!_syncItems.Remove(item)) {
+        if (!_syncItems.Remove(item))
+        {
             Debug.LogError("Предмет не был удален из инвентаря");
         }
     }
 
     [Command(requiresAuthority = false)]
-    private void CmdAddItem(GridSectionItem item) {
+    private void CmdAddItem(GridSectionItem item)
+    {
         Debug.Log("CmdAddItem. " + item);
         AddItem(item);
     }
 
     [Command(requiresAuthority = false)]
-    private void CmdRemoveItem(GridSectionItem item) {
+    private void CmdRemoveItem(GridSectionItem item)
+    {
         RemoveItem(item);
     }
 
     private void SyncItems(SyncList<GridSectionItem>.Operation op, int index,
-        GridSectionItem oldItem, GridSectionItem newItem) {
-        switch (op) {
+        GridSectionItem oldItem, GridSectionItem newItem)
+    {
+        switch (op)
+        {
             case SyncList<GridSectionItem>.Operation.OP_ADD:
-            {
-                _items.Add(newItem.PlacementId.LocalId, newItem);
-                break;
-            }
+                {
+                    _items.Add(newItem.PlacementId.LocalId, newItem);
+                    break;
+                }
             case SyncList<GridSectionItem>.Operation.OP_REMOVEAT:
-            {
-                _items.Remove(oldItem.PlacementId.LocalId);
-                break;
-            }
+                {
+                    _items.Remove(oldItem.PlacementId.LocalId);
+                    break;
+                }
         }
     }
     #endregion
@@ -112,11 +123,12 @@ public class GridSection : NetworkBehaviour
     /// поместить данный предмет. true, если такой прямоугольник найден.
     /// Асимптотика: O(n^2)
     /// </summary>
-    private bool FindFreePos(FillingMatrix sectionFilling, ItemData item, out int x, out int y) {
+    private bool FindFreePos(FillingMatrix sectionFilling, ItemData item, out int x, out int y)
+    {
         // O(log(n))
         ItemStaticData staticData = _itemStaticDataManager.GetStaticDataByName(
             item.ItemStaticDataName);
-        
+
         // O(n^2)
         bool hasFreePlace = sectionFilling.FindFreeRectPos(
             staticData.Width, staticData.Height,
@@ -131,16 +143,19 @@ public class GridSection : NetworkBehaviour
     /// Получает информацию о заполненности инвентаря.
     /// Асимптотика: O(n * log(n))
     /// </summary>
-    private FillingMatrix GetFillingMatrix() {
+    private FillingMatrix GetFillingMatrix()
+    {
         // O(n * log(n))
         var fillingRects = new FillingMatrix.FillingRect[_items.Count];
         GridSectionItem[] itemsArr = _items.Values.ToArray();
-        for (int i = 0; i < itemsArr.Length; i++) {
+        for (int i = 0; i < itemsArr.Length; i++)
+        {
             GridSectionItem currItem = itemsArr[i];
             // O(log(n))
             var itemStaticData = _itemStaticDataManager
                 .GetStaticDataByName(itemsArr[i].ItemData.ItemStaticDataName);
-            fillingRects[i] = new FillingMatrix.FillingRect() {
+            fillingRects[i] = new FillingMatrix.FillingRect()
+            {
                 height = itemStaticData.Height,
                 width = itemStaticData.Width,
                 x = itemsArr[i].InventoryX,
@@ -163,14 +178,16 @@ public class GridSection : NetworkBehaviour
     /// предметов, чем требуется
     /// </summary>
     private int FindUnfilledItemStacksForCount(ItemData itemData, int count,
-        out List<GridSectionItem> unfilled) {
+        out List<GridSectionItem> unfilled)
+    {
         int maxStackSize = _itemStaticDataManager
             .GetStaticDataByName(itemData.ItemStaticDataName).StackSize;
-        
+
         // Количество, для которого ищутся незаполненные стаки
         int countToAdd = count;
         unfilled = new List<GridSectionItem>();
-        foreach (GridSectionItem gridItem in _items.Values) {
+        foreach (GridSectionItem gridItem in _items.Values)
+        {
             // Стаковать можно только одинаковое, чтобы не потерять различия
             bool areSameItems = gridItem.ItemData.Equals(itemData);
 
@@ -179,7 +196,8 @@ public class GridSection : NetworkBehaviour
             int stackCanAccept = maxStackSize - gridItem.Count;
             bool itemStackLimitNotReached = stackCanAccept > 0;
 
-            if (areSameItems && itemStackLimitNotReached) {
+            if (areSameItems && itemStackLimitNotReached)
+            {
                 // Стак такого же типа, и не заполнен, значит, может взять по крайней мере часть
                 // заданного количества предмета
                 unfilled.Add(gridItem);
@@ -203,9 +221,9 @@ public class GridSection : NetworkBehaviour
     // }
 
     // private bool CanAddToFreePlace(ItemData itemData, out int x, out int y) {
-        
 
-        
+
+
     //     x = resX;
     //     y = resY;
     //     return isFreePosFound;
@@ -215,7 +233,8 @@ public class GridSection : NetworkBehaviour
     /// freePlaces -- те свободные места, в которые можно добавить предметы в заданном количестве.
     /// Избыточных свободных мест не возвращается
     /// </summary>
-    private bool CanAddToFreePlaces(ItemData itemData, int count, out List<Vector2Int> freePlaces) {
+    private bool CanAddToFreePlaces(ItemData itemData, int count, out List<Vector2Int> freePlaces)
+    {
         freePlaces = new List<Vector2Int>();
         var itemStaticData = _itemStaticDataManager.GetStaticDataByName(itemData.ItemStaticDataName);
         int maxStackSize = itemStaticData.StackSize;
@@ -223,11 +242,14 @@ public class GridSection : NetworkBehaviour
 
         // O(n * log(n))
         FillingMatrix fillingMatrix = GetFillingMatrix();
-        for (int i = 0; i < stacks; i++) {
+        for (int i = 0; i < stacks; i++)
+        {
             // O(n^2)
             bool canAddItem = FindFreePos(fillingMatrix, itemData, out int x, out int y);
-            if (canAddItem) {
-                FillingMatrix.FillingRect itemRect = new FillingMatrix.FillingRect() {
+            if (canAddItem)
+            {
+                FillingMatrix.FillingRect itemRect = new FillingMatrix.FillingRect()
+                {
                     width = itemStaticData.Width,
                     height = itemStaticData.Height,
                     x = x,
@@ -235,31 +257,35 @@ public class GridSection : NetworkBehaviour
                 };
                 fillingMatrix.SetRect(itemRect, true);
                 freePlaces.Add(new Vector2Int(x, y));
-            } else
+            }
+            else
                 // Если хотя бы для одного стака предмета нет свободной позиции
                 return false;
         }
         return true;
     }
-    
+
     /// <summary>
     /// true, если все предметы в заданном количестве возможно добавить в секцию инвентаря 
     /// </summary>
-    public bool CanAddToSection(ItemData itemData, int count) {
+    public bool CanAddToSection(ItemData itemData, int count)
+    {
         int toAddToFreePlace = FindUnfilledItemStacksForCount(itemData, count, out _);
         if (toAddToFreePlace <= 0)
             return true;
-        
+
         return CanAddToFreePlaces(itemData, toAddToFreePlace, out _);
     }
     #endregion
 
     #region Add And Remove
-    private FillingMatrix.FillingRect GetRectForItem(GridSectionItem gridItem) {
+    private FillingMatrix.FillingRect GetRectForItem(GridSectionItem gridItem)
+    {
         ItemStaticData staticData = _itemStaticDataManager
             .GetStaticDataByName(gridItem.ItemData.ItemStaticDataName);
 
-        FillingMatrix.FillingRect itemRect = new FillingMatrix.FillingRect() {
+        FillingMatrix.FillingRect itemRect = new FillingMatrix.FillingRect()
+        {
             width = staticData.Width,
             height = staticData.Height,
             x = gridItem.InventoryX,
@@ -277,22 +303,27 @@ public class GridSection : NetworkBehaviour
     /// гарантированно освобождено после добавления (перемещения) предмета
     /// </param>
     public bool TryToAddGridSectionItem(GridSectionItem gridItem,
-        GridSectionItem ignoreOldItemFilling) {
+        GridSectionItem ignoreOldItemFilling)
+    {
         FillingMatrix filling = GetFillingMatrix();
         var itemRect = GetRectForItem(gridItem);
 
-        if (ignoreOldItemFilling is not null) {
+        if (ignoreOldItemFilling is not null)
+        {
             filling.SetRect(GetRectForItem(ignoreOldItemFilling), false);
             // Это позволяет перемещать, например, предмет 2x2 на один слот
             // вверх/вниз/вправо/влево от предыдущей позиции
         }
-        
+
         if (!filling.HasPlaceForRect(itemRect))
             return false;
 
-        if (isServer) {
+        if (isServer)
+        {
             AddItem(gridItem);
-        } else {
+        }
+        else
+        {
             CmdAddItem(gridItem);
         }
 
@@ -303,10 +334,12 @@ public class GridSection : NetworkBehaviour
     /// Пробует добавить предмет в заданном количестве. Либо добавляются все предметы,
     /// либо ни один
     /// </summary>
-    public bool TryToAddToSection(ItemData itemData, int count = 1) {
+    public bool TryToAddToSection(ItemData itemData, int count = 1)
+    {
         Debug.Log("TryToAddToSection. " + itemData + " count: " + 1);
         int canNotAddToStacks = FindUnfilledItemStacksForCount(itemData, count, out var unfilled);
-        if (canNotAddToStacks <= 0) {
+        if (canNotAddToStacks <= 0)
+        {
             TryToAddToUnfilledItemStacks(itemData, count);
             return true;
         }
@@ -318,7 +351,7 @@ public class GridSection : NetworkBehaviour
         // Можно передавать в вызовы некоторые уже вычисленные данные, а не вычислять заново
         if (!canAddToFreePlaces)
             return false;
-        
+
         // Если каждый из этапов возможен, "транзакция" выполняется
         TryToAddToUnfilledItemStacks(itemData, count);
         TryToAddToFreePlaces(itemData, canNotAddToStacks);
@@ -329,20 +362,23 @@ public class GridSection : NetworkBehaviour
     /// Возвращает число предметов, которые не были добавлены. Если оно 0 или отриц., то все предметы были
     /// добавлены
     /// </summary>
-    private int TryToAddToUnfilledItemStacks(ItemData itemData, int count) {
+    private int TryToAddToUnfilledItemStacks(ItemData itemData, int count)
+    {
         int notAdded = FindUnfilledItemStacksForCount(itemData, count, out List<GridSectionItem> unfilled);
         if (notAdded >= count)
             return notAdded;
-        
+
         // Удаляем все незаполненные стаки, чтобы добавить их в уже заполненном виде
-        foreach (GridSectionItem unfilledStack in unfilled) {
+        foreach (GridSectionItem unfilledStack in unfilled)
+        {
             RemoveFromSection(unfilledStack.PlacementId.LocalId);
         }
 
         int countToAdd = count;
         int maxStackSize = _itemStaticDataManager
             .GetStaticDataByName(itemData.ItemStaticDataName).StackSize;
-        foreach (GridSectionItem unfilledToFill in unfilled) {
+        foreach (GridSectionItem unfilledToFill in unfilled)
+        {
             // Сколько осталось до максимально возможного размера стака?
             int canAddToStack = maxStackSize - unfilledToFill.Count;
             // Сколько можно фактически добавить (учитывая, сколько еще есть предметов)?
@@ -350,9 +386,12 @@ public class GridSection : NetworkBehaviour
             unfilledToFill.Count += addToStack;
             countToAdd -= addToStack;
 
-            if (isServer) {
+            if (isServer)
+            {
                 AddItem(unfilledToFill);
-            } else {
+            }
+            else
+            {
                 CmdAddItem(unfilledToFill);
             }
         }
@@ -363,17 +402,20 @@ public class GridSection : NetworkBehaviour
     /// <summary>
     /// Находит свободные места в инвентаре и добавляет туда предмет в заданном количестве
     /// </summary>
-    private bool TryToAddToFreePlaces(ItemData itemData, int count) {
+    private bool TryToAddToFreePlaces(ItemData itemData, int count)
+    {
         bool canAdd = CanAddToFreePlaces(itemData, count, out var freePlaces);
         if (!canAdd)
             return false;
-        
+
         int maxStackSize = _itemStaticDataManager.GetStaticDataByName(itemData.ItemStaticDataName).StackSize;
         int countToAdd = count;
-        foreach (Vector2Int freePlace in freePlaces) {
+        foreach (Vector2Int freePlace in freePlaces)
+        {
             // Добавляется либо полный новый стак, либо та часть, которая осталась
             int countInNewStack = countToAdd >= maxStackSize ? maxStackSize : countToAdd;
-            GridSectionItem gridItem = new GridSectionItem() {
+            GridSectionItem gridItem = new GridSectionItem()
+            {
                 ItemData = itemData,
                 Count = countInNewStack,
                 InventoryX = freePlace.x,
@@ -381,31 +423,38 @@ public class GridSection : NetworkBehaviour
                 InventoryNetId = netId
             };
 
-            if (isServer) {
+            if (isServer)
+            {
                 AddItem(gridItem);
-            } else {
+            }
+            else
+            {
                 CmdAddItem(gridItem);
             }
             countToAdd -= countInNewStack;
         }
-        
+
         return true;
     }
 
-    public bool RemoveFromSection(uint localItemId) {
+    public bool RemoveFromSection(uint localItemId)
+    {
         // Debug.Log("Remove from section - has authority: " + this.hasAuthority);
         // bool hasItem = _items.IndexOf(invItem) != -1;
         if (!_items.ContainsKey(localItemId))
             return false;
-        
+
         GridSectionItem invItem = _items[localItemId];
         if (invItem == null)
             return false;
-        
-        if (isServer) {
+
+        if (isServer)
+        {
             // Debug.Log("Remove Item");
             RemoveItem(invItem);
-        } else {
+        }
+        else
+        {
             // Debug.Log("Cmd Remove Item");
             CmdRemoveItem(invItem);
         }
@@ -414,8 +463,10 @@ public class GridSection : NetworkBehaviour
     #endregion
 
     #region Test
-    public bool TryToAddTestItems() {
-        LifecycleEffectItemData newItem = new LifecycleEffectItemData() {
+    public bool TryToAddTestItems()
+    {
+        LifecycleEffectItemData newItem = new LifecycleEffectItemData()
+        {
             ItemStaticDataName = "FirstAidKit",
             Uses = 8
         };
@@ -428,9 +479,11 @@ public class GridSection : NetworkBehaviour
         // return true && TryToAddToSection(armor, 3);
     }
 
-    private void PrintItems() {
+    private void PrintItems()
+    {
         Debug.Log("Содержимое инвентаря");
-        foreach (var pair in Items) {
+        foreach (var pair in Items)
+        {
             Debug.Log($"\t{pair.Key}: {pair.Value}");
         }
     }
