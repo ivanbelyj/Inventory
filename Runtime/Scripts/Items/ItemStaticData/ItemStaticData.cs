@@ -32,7 +32,7 @@ public class ItemStaticData : ScriptableObject
     [SerializeField]
     private string _itemName;
 
-    [SerializeField]
+    [SerializeField, TextArea]
     private string _description;
     #endregion
 
@@ -40,9 +40,11 @@ public class ItemStaticData : ScriptableObject
     public Sprite Sprite => _icon;
     public int Width => _width;
     public int Height => _height;
-    public int StackSize {
+    public int StackSize
+    {
         get => _stackSize;
-        set {
+        set
+        {
             if (value < 1)
                 Debug.LogError("Incorrect stack size for item");
             _stackSize = value;

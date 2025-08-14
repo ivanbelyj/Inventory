@@ -90,7 +90,7 @@ public class ItemsUIControllerCore : MonoBehaviour
     /// <summary>
     /// Устанавливает игрока, информация которого будет отображаться
     /// </summary>
-    protected void SetPlayer(
+    public void SetPlayer(
         GameObject playerGO,
         IGridSectionInventory inventory,
         IInventoryInfoProvider inventoryInfoProvider)
